@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">MiniBlogApp</string>
+    <string name="app_title">Mini Blog App</string>
+    <string name="login_as_admin">Đăng nhập tài khoản</string>
+    <string name="username">Tên đăng nhập</string>
+    <string name="password">Mật khẩu</string>
+    <string name="signIn">Đăng nhập</string>
+    <string name="userListTitle">Danh sách người dùng</string>
+    <string name="postListTitle">Danh sách bài viết</string>
+    <string name="submitPost">Đăng bài</string>
+    <string name="createPostTitle">Tạo bài viết</string>
+    <string name="postTitle">Tiêu đề bài viết</string>
+    <string name="postContent">Nội dung bài viết</string>
+    <string name="author">Người đăng bài</string>
+    <string name="post">Bài viết</string>
+    <string name="users">Người dùng</string>
+    <string name="userSearchHint">Tìm kiếm theo tên tác giả</string>
+    <string name="searchPostHint">Tìm kiếm theo tiêu đề, nội dung bài viết</string>
+    <string name="userHasNoPost">Người dùng này chưa có bài viết nào</string>
+    <string name="createPost">Tạo bài viết</string>
+</resources>
