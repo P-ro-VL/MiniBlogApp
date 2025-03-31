@@ -1,13 +1,9 @@
 package vn.linhpv.miniblogapp.view
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
-import vn.linhpv.miniblogapp.R
+import vn.linhpv.miniblogapp.databinding.PostDetailLayoutBinding
 
 @AndroidEntryPoint
 class PostDetailActivity : AppCompatActivity() {
@@ -15,7 +11,8 @@ class PostDetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.post_detail_layout)
+        val binding = PostDetailLayoutBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val extras = intent.extras
 
@@ -24,11 +21,11 @@ class PostDetailActivity : AppCompatActivity() {
         val uploadDate = extras?.getString("uploadDate")
         val content = extras?.getString("content")
 
-        findViewById<TextView>(R.id.postTitle).text = title
-        findViewById<TextView>(R.id.authorAndDateInfo).text = author + " - " + uploadDate
-        findViewById<TextView>(R.id.postContent).text = content
+        binding.postTitle.text = title
+        binding.authorAndDateInfo.text = author + " - " + uploadDate
+        binding.postContent.text = content
 
-        val backButton = findViewById<ImageView>(R.id.backButton)
+        val backButton = binding.backButton
         backButton.setOnClickListener {
             finish()
         }

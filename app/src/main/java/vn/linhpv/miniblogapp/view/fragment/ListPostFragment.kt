@@ -8,10 +8,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,9 +18,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 import vn.linhpv.miniblogapp.R
+import vn.linhpv.miniblogapp.databinding.PostListLayoutBinding
 import vn.linhpv.miniblogapp.model.Post
 import vn.linhpv.miniblogapp.view.CreatePostActivity
 import vn.linhpv.miniblogapp.view.PostDetailActivity
@@ -35,7 +32,7 @@ import java.util.Locale
 @AndroidEntryPoint
 class ListPostFragment : Fragment() {
 
-    lateinit var root: ViewGroup
+    lateinit var binding: PostListLayoutBinding
     lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     lateinit var listView: RecyclerView
@@ -48,13 +45,13 @@ class ListPostFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        this.root = inflater.inflate(R.layout.post_list_layout, null) as ConstraintLayout
+        this.binding = PostListLayoutBinding.inflate(inflater, container, false)
 
-        listView = root.findViewById(R.id.userRecyclerView)
-        listView.layoutManager = LinearLayoutManager(root.context)
-        listViewAdapter = ListPostAdapter(root.context, false)
+        listView = binding.userRecyclerView
+        listView.layoutManager = LinearLayoutManager(binding.root.context)
+        listViewAdapter = ListPostAdapter(binding.root.context, false)
         listViewAdapter.addLoadStateListener {
-            root.findViewById<ProgressBar>(R.id.loadingIndicator).isVisible = it.refresh is LoadState.Loading
+            binding.loadingIndicator.isVisible = it.refresh is LoadState.Loading
         }
         listView.adapter = listViewAdapter
 
@@ -62,10 +59,10 @@ class ListPostFragment : Fragment() {
             listViewAdapter.submitData(viewLifecycleOwner.lifecycle, it)
         }
 
-        swipeRefreshLayout = root.findViewById(R.id.swipeRefreshLayout)
+        swipeRefreshLayout = binding.swipeRefreshLayout
         initPullToRefresh()
 
-        val searchBar = root.findViewById<EditText>(R.id.searchBar)
+        val searchBar = binding.searchBar
         searchBar.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
             }
@@ -80,7 +77,7 @@ class ListPostFragment : Fragment() {
             }
         })
 
-        val fab = root.findViewById<FloatingActionButton>(R.id.fab)
+        val fab = binding.fab
         fab.setOnClickListener {
             val i = Intent(
                 context,
@@ -90,7 +87,7 @@ class ListPostFragment : Fragment() {
             startActivity(i)
         }
 
-        return root
+        return binding.root
     }
 
     private fun initPullToRefresh() {

@@ -6,19 +6,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.paging.LoadState
-import androidx.paging.LoadStates
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,15 +23,15 @@ import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
 import dagger.hilt.android.AndroidEntryPoint
 import vn.linhpv.miniblogapp.R
+import vn.linhpv.miniblogapp.databinding.UserListLayoutBinding
 import vn.linhpv.miniblogapp.model.User
 import vn.linhpv.miniblogapp.view.UserDetailActivity
 import vn.linhpv.miniblogapp.viewmodel.ListUserViewModel
 
-
 @AndroidEntryPoint
 class ListUserFragment : Fragment() {
 
-    lateinit var root: ViewGroup
+    lateinit var binding: UserListLayoutBinding
     lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     lateinit var listView: RecyclerView
@@ -49,13 +44,13 @@ class ListUserFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        this.root = inflater.inflate(R.layout.user_list_layout, null) as ConstraintLayout
+        this.binding = UserListLayoutBinding.inflate(inflater, container, false)
 
-        listView = root.findViewById(R.id.userRecyclerView)
-        listView.layoutManager = LinearLayoutManager(root.context)
-        listViewAdapter = ListUserAdapter(root.context)
+        listView = binding.userRecyclerView
+        listView.layoutManager = LinearLayoutManager(binding.root.context)
+        listViewAdapter = ListUserAdapter(binding.root.context)
         listViewAdapter.addLoadStateListener {
-            root.findViewById<ProgressBar>(R.id.loadingIndicator).isVisible = it.refresh is LoadState.Loading
+            binding.loadingIndicator.isVisible = it.refresh is LoadState.Loading
         }
         listView.adapter = listViewAdapter
 
@@ -63,10 +58,10 @@ class ListUserFragment : Fragment() {
             listViewAdapter.submitData(viewLifecycleOwner.lifecycle, it)
         }
 
-        swipeRefreshLayout = root.findViewById(R.id.swipeRefreshLayout)
+        swipeRefreshLayout = binding.swipeRefreshLayout
         initPullToRefresh()
 
-        val searchBar = root.findViewById<EditText>(R.id.searchBar)
+        val searchBar = binding.searchBar
         searchBar.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
             }
@@ -81,7 +76,7 @@ class ListUserFragment : Fragment() {
             }
         })
 
-        return root
+        return binding.root
     }
 
     private fun initPullToRefresh() {

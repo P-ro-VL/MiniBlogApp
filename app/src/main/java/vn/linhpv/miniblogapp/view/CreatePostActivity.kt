@@ -6,13 +6,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.PagingDataAdapter
@@ -23,48 +20,47 @@ import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.imageview.ShapeableImageView
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import vn.linhpv.miniblogapp.R
+import vn.linhpv.miniblogapp.databinding.PostCreateLayoutBinding
+import vn.linhpv.miniblogapp.databinding.UserListItemBinding
+import vn.linhpv.miniblogapp.databinding.UserListLayoutBinding
 import vn.linhpv.miniblogapp.datasource.CreatePostRequest
 import vn.linhpv.miniblogapp.datasource.RetrofitAPI
-import vn.linhpv.miniblogapp.model.Post
 import vn.linhpv.miniblogapp.model.User
 import vn.linhpv.miniblogapp.util.PersistentSnackbar
 import vn.linhpv.miniblogapp.util.SnackbarType
 import vn.linhpv.miniblogapp.viewmodel.ListUserViewModel
-import kotlin.coroutines.coroutineContext
 
 @AndroidEntryPoint
 class CreatePostActivity : AppCompatActivity() {
 
     var selectedUser: User? = null
 
+    private lateinit var binding: PostCreateLayoutBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.post_create_layout)
+        binding = PostCreateLayoutBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
 
-        val backButton = findViewById<ImageView>(R.id.backButton)
+        val backButton = binding.backButton
         backButton.setOnClickListener {
             finish()
         }
 
-        val postUserDropdown = findViewById<TextView>(R.id.postUserDropdown)
+        val postUserDropdown = binding.postUserDropdown
         postUserDropdown.setOnClickListener {
             showBottomSheet()
         }
 
-        val submitPostBtn = findViewById<TextView>(R.id.submitPost)
+        val submitPostBtn = binding.submitPost
         submitPostBtn.setOnClickListener {
             submitPostBtn.isVisible = false
-            findViewById<ProgressBar>(R.id.loadingIndicator).isVisible = true
+            binding.loadingIndicator.isVisible = true
 
             lifecycleScope.launch {
                 createPost()
@@ -75,7 +71,7 @@ class CreatePostActivity : AppCompatActivity() {
 
     fun showBottomSheet() {
         val bottomSheetFragment = BottomSheetFragment() {
-            findViewById<TextView>(R.id.postUserDropdown).text = it.firstName + " " + it.lastName
+            binding.postUserDropdown.text = it.firstName + " " + it.lastName
             selectedUser = it
         }
 
@@ -85,8 +81,8 @@ class CreatePostActivity : AppCompatActivity() {
     suspend fun createPost() {
         val activity = this
 
-        val title = findViewById<TextView>(R.id.postNameInput).text
-        val content = findViewById<TextView>(R.id.postContentInput).text
+        val title = binding.postNameInput.text
+        val content = binding.postContentInput.text
 
         val body = CreatePostRequest(
             title?.toString() ?: "--",
@@ -124,16 +120,16 @@ class BottomSheetFragment(private val onItemClick: (User) -> Unit) : BottomSheet
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val root = inflater.inflate(R.layout.user_list_layout, null)
+        val binding = UserListLayoutBinding.inflate(inflater, container, false)
 
-        recyclerView = root.findViewById(R.id.userRecyclerView)
+        recyclerView = binding.userRecyclerView
 
-        adapter = ListUserBottomsheetAdapter(root.context) {
+        adapter = ListUserBottomsheetAdapter(binding.root.context) {
             onItemClick(it)
             dismiss()
         }
         adapter.addLoadStateListener {
-            root.findViewById<ProgressBar>(R.id.loadingIndicator).isVisible = it.refresh is LoadState.Loading
+            binding.loadingIndicator.isVisible = it.refresh is LoadState.Loading
         }
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
@@ -142,7 +138,7 @@ class BottomSheetFragment(private val onItemClick: (User) -> Unit) : BottomSheet
             adapter.submitData(lifecycle, it)
         }
 
-        return root
+        return binding.root
     }
 }
 
@@ -166,14 +162,14 @@ class ListUserBottomsheetAdapter(
         parent: ViewGroup,
         viewType: Int
     ): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.user_list_item, parent, false)
+        val binding = UserListItemBinding.inflate(LayoutInflater.from(context), parent, false)
 
-        return ViewHolder(view)
+        return ViewHolder(binding)
     }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var userAvatar: ShapeableImageView = itemView.findViewById(R.id.userAvatar);
-        var userDisplayName: TextView = itemView.findViewById(R.id.userDisplayName);
+    class ViewHolder(binding: UserListItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        var userAvatar: ShapeableImageView = binding.userAvatar
+        var userDisplayName: TextView = binding.userDisplayName
 
         fun bind(user: User) {
             val displayName = "${user.firstName} ${user.lastName}"

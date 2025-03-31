@@ -3,9 +3,9 @@ package vn.linhpv.miniblogapp.view
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import vn.linhpv.miniblogapp.R
+import vn.linhpv.miniblogapp.databinding.MainLayoutBinding
 import vn.linhpv.miniblogapp.view.fragment.ListPostFragment
 import vn.linhpv.miniblogapp.view.fragment.ListUserFragment
 
@@ -19,7 +19,8 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.main_layout)
+        val binding = MainLayoutBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         listUserFragment = ListUserFragment()
         listPostFragment = ListPostFragment()
@@ -33,7 +34,7 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavBar)
+        val bottomNavigationView = binding.bottomNavBar
         bottomNavigationView.setOnNavigationItemSelectedListener {
             when (it.itemId) {
                 R.id.userMenuItem -> setCurrentFragment(listUserFragment)
