@@ -15,16 +15,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MiniBlogApp"
         tools:targetApi="31">
-        <activity android:name=".view.HomeActivity"
-            android:exported="false"/>
-        <activity android:name=".view.UserDetailActivity"
-            android:exported="false"/>
-        <activity android:name=".view.PostDetailActivity"
-            android:exported="false"/>
-        <activity android:name=".view.CreatePostActivity"
-            android:exported="false"/>
+        <activity android:name=".view.SignUpPage" android:exported="false"/>
+        <activity android:name=".view.MainLayout" android:exported="false"/>
+        <activity android:name=".view.PostDetailPage" android:exported="false"/>
+        <activity android:name=".view.PostCreatePage" android:exported="false"/>
+        <activity android:name=".view.UserProfilePage" android:exported="false"/>
+        <activity android:name=".view.MyProfilePage" android:exported="false"/>
         <activity
-            android:name=".MainActivity"
+            android:name=".view.SignInPage"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

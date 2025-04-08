@@ -1,6 +1,5 @@
 package vn.linhpv.miniblogapp.datasource
 
-import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import retrofit2.Call
 import retrofit2.CallAdapter
 import retrofit2.Retrofit
@@ -14,21 +13,19 @@ class RetrofitAPI {
 
     companion object {
         const val BASE_URL = "https://dummyjson.com"
+        const val IMAGE_BASE_URL = "https://api.imgur.com"
 
         var instance: RetrofitAPI = RetrofitAPI()
     }
 
-    var userDataSource: UserDataSource? = null
-    var postDataSource: PostDataSource? = null
+    var imageDataSource: ImageDataSource? = null
 
     init {
-        val retrofit: Retrofit = Builder()
-            .baseUrl(BASE_URL)
+        val imgRetrofit = Retrofit.Builder()
+            .baseUrl(IMAGE_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(CustomCallAdapter.Factory())
             .build()
-        userDataSource = retrofit.create(UserDataSource::class.java)
-        postDataSource = retrofit.create(PostDataSource::class.java)
+        imageDataSource = imgRetrofit.create(ImageDataSource::class.java)
     }
 
 }

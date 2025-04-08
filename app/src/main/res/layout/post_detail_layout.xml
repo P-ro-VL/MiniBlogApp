@@ -1,59 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:padding="20dp">
+        android:layout_height="match_parent">
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            >
+            app:layout_constraintStart_toStartOf="parent">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-                <ImageView
-                    android:id="@+id/backButton"
-                    android:src="@drawable/chevron_left"
+
+                <TextView
+                    android:id="@+id/backBtn"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
+                    android:drawableStart="@drawable/chevron_left"
+                    android:drawableTint="@color/white"
+                    android:background="@drawable/circle_background"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginStart="20dp"
+                    app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:translationZ="10dp"/>
 
-                <TextView
-                    android:id="@+id/postTitle"
+                <CheckBox
+                    android:id="@+id/favouriteBtn"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:drawableTop="@drawable/ic_save"
+                    android:drawableTint="@color/white"
+                    android:background="@drawable/selectable_save_post"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:paddingTop="1dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginEnd="20dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:translationZ="10dp"/>
+
+                <ImageView
+                    android:id="@+id/thumbnail"
                     android:layout_width="match_parent"
+                    android:layout_height="295dp"
+                    android:scaleType="centerCrop"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"/>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="18dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toBottomOf="@id/thumbnail"
+                    android:paddingHorizontal="20dp"
+                    >
+                    <TextView
+                        android:id="@+id/title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/sf_regular"
+                        android:textSize="20sp"
+                        android:textColor="@color/white"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
+                    <TextView
+                        android:id="@+id/uploadDate"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/sf_regular"
+                        android:textSize="20sp"
+                        android:textColor="@color/white"
+                        android:layout_marginTop="12dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/title"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/authorSection"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:textSize="20sp"
-                    android:textFontWeight="800"
-                    app:layout_constraintTop_toBottomOf="@id/backButton"
-                    />
+                    android:layout_marginStart="20dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/thumbnail">
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/userAvatar"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearance="@style/circularImageStyle"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"/>
+                    <TextView
+                        android:id="@+id/userName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:textColor="@color/charleston50"
+                        style="@style/fontContent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/userAvatar"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <TextView
-                    android:id="@+id/authorAndDateInfo"
+                    android:id="@+id/content"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textStyle="italic"
-                    android:textColor="@color/silver"
-                    app:layout_constraintTop_toBottomOf="@id/postTitle"
-                    />
-
-                <TextView
-                    android:id="@+id/postContent"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginHorizontal="20dp"
                     android:justificationMode="inter_word"
-                    android:textSize="16sp"
-                    app:layout_constraintTop_toBottomOf="@id/authorAndDateInfo"/>
+                    style="@style/fontContent"
+                    app:layout_constraintTop_toBottomOf="@id/authorSection"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
         </ScrollView>
-
+  
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

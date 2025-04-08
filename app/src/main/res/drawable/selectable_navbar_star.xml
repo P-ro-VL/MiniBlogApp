@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_star" android:state_checked="true" android:tint="@color/white"/>
+    <item android:drawable="@drawable/ic_star" android:state_checked="false" android:tint="#cc505050"/>
+</selector>

@@ -1,87 +1,83 @@
 package vn.linhpv.miniblogapp.repository
 
+import android.util.Log
 import androidx.lifecycle.LiveData
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
-import androidx.paging.liveData
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import vn.linhpv.miniblogapp.datasource.RetrofitAPI
+import kotlinx.coroutines.launch
+import vn.linhpv.miniblogapp.datasource.UserDataSource
 import vn.linhpv.miniblogapp.model.User
-import kotlin.math.ceil
+import javax.inject.Inject
 
 
-@Module
-@InstallIn(SingletonComponent::class)
-class UserRepository {
+class UserRepository @Inject constructor(private val dataSource: UserDataSource) {
 
-    companion object {
-        const val DEFAULT_PAGE_SIZE = 20
-    }
-
-    fun getUsers(keyword: String): LiveData<PagingData<User>> = Pager(
-        config = PagingConfig(pageSize = DEFAULT_PAGE_SIZE, maxSize = 200),
-        pagingSourceFactory = { UserPagingSource(keyword) }
-    ).liveData
-
-    @Provides
-    fun provides(): UserRepository {
-        return UserRepository()
-    }
-
-}
-
-class UserPagingSource(val keyword: String) : PagingSource<Int, User>() {
-
-    companion object {
-        val userCache = HashMap<Int, User>()
-    }
-
-    override fun getRefreshKey(state: PagingState<Int, User>): Int? {
-        return state.anchorPosition?.let {
-            state.closestPageToPosition(it)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(it)?.nextKey?.minus(1)
+    fun getUser(id: String): LiveData<User> {
+        val liveData = MutableLiveData<User>()
+        dataSource.getUser(id) {
+            liveData.postValue(it)
         }
+
+        return liveData
     }
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, User> {
-        return try {
-            val position = params.key ?: 0
+    fun createUser(user: User): LiveData<Boolean> {
+        val liveData = MutableLiveData<Boolean>()
+        dataSource.createUser(user) {
+            liveData.postValue(it)
+        }
 
-            val response = withContext(Dispatchers.IO) {
-                RetrofitAPI.instance.userDataSource?.searchUser(
-                    keyword,
-                    UserRepository.DEFAULT_PAGE_SIZE,
-                    position * UserRepository.DEFAULT_PAGE_SIZE
-                )
+        return liveData
+    }
+
+    fun updateUser(user: User): LiveData<Boolean> {
+        val liveData = MutableLiveData<Boolean>()
+        dataSource.updateUser(user) {
+            liveData.postValue(it)
+        }
+
+        return liveData
+    }
+
+    fun authenticate(email: String, password: String): LiveData<User?> {
+        val liveData = MutableLiveData<User?>()
+        dataSource.authenticate(email, password) {
+            liveData.postValue(it)
+        }
+        return liveData
+    }
+
+    fun getFollowings(userId: String): MutableLiveData<List<User>> {
+        val liveData = MutableLiveData<List<User>>()
+
+        dataSource.getUser(userId) { rootUser ->
+            val result = mutableListOf<User>()
+
+            Log.d("followers", rootUser?.following.toString())
+
+            for(followingId: String in rootUser?.following ?: emptyList()) {
+                dataSource.getUser(followingId) {
+                    if(it != null) {
+                        result.add(it)
+                        liveData.postValue(result)
+                    }
+                } 
             }
 
-            if (response != null) {
-                val maxPage = ceil(response.total / UserRepository.DEFAULT_PAGE_SIZE.toDouble()).toInt()
-
-                for(user: User in response.users) {
-                    userCache[user.id ?: 0] = user
-                }
-
-                LoadResult.Page(
-                    data = response.users,
-                    prevKey = if (position == 0) null else position - 1,
-                    nextKey = if (position >= maxPage) null else position + 1
-                )
-            } else {
-                LoadResult.Error(Exception("No Response"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            LoadResult.Error(e)
         }
+        return liveData
+    }
+
+    fun searchUser(keyword: String): MutableLiveData<List<User>> {
+        val liveData = MutableLiveData<List<User>>()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val data = dataSource.searchUser(keyword)
+            liveData.postValue(data)
+        }
+
+        return liveData
     }
 
 }

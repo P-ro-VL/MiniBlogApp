@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/selected_background_bold"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="10dp">
+        <RadioGroup
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/navBarItems"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <RadioButton
+                android:id="@+id/nav_discover"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:button="@null"
+                android:checked="true"
+                android:drawableTop="@drawable/ic_global"
+                android:text="Khám phá"
+                android:drawableTint="@color/selectable_navbar_text"
+                android:textColor="@color/selectable_navbar_text"
+                style="@style/fontNote"/>
+
+            <RadioButton
+                android:id="@+id/nav_search"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:button="@null"
+                android:drawableTop="@drawable/ic_search"
+                android:text="Tìm kiếm"
+                android:drawableTint="@color/selectable_navbar_text"
+                android:textColor="@color/selectable_navbar_text"
+                style="@style/fontNote"/>
+
+            <RadioButton
+                android:id="@+id/nav_follow"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:button="@null"
+                android:drawableTop="@drawable/ic_star"
+                android:text="Theo dõi"
+                android:drawableTint="@color/selectable_navbar_text"
+                android:textColor="@color/selectable_navbar_text"
+                style="@style/fontNote"/>
+
+            <RadioButton
+                android:id="@+id/nav_profile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:button="@null"
+                android:drawableTop="@drawable/ic_person"
+                android:text="Cá nhân"
+                android:drawableTint="@color/selectable_navbar_text"
+                android:textColor="@color/selectable_navbar_text"
+                style="@style/fontNote"/>
+
+        </RadioGroup>
+
+    </LinearLayout>
+
+</layout>

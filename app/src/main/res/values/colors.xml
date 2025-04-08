@@ -8,4 +8,16 @@
     <color name="silver">#FFC0C0C0</color>
     <color name="gainsboro">#FFDCDCDC</color>
     <color name="gray">#868686</color>
+
+    <color name="charleston100">#ff272727</color>
+    <color name="charleston90">#e6272727</color>
+    <color name="charleston80">#cc272727</color>
+    <color name="charleston50">#80272727</color>
+    <color name="charleston20">#33272727</color>
+    <color name="charleston10">#1a272727</color>
+
+    <color name="yellow100">#ffFFC100</color>
+
+    <color name="persianRed">#ffA12222</color>
+    
 </resources>
