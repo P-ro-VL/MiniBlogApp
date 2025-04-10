@@ -31,49 +31,62 @@ class PostCreatePage : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.post_create_layout)
 
-        val user = MiniApplication.instance.currentUser
+        initUploadImage()
 
+        binding.uploadButton.setOnClickListener {
+            val result = uploadAction()
+            if (result != null)
+                handleObserver(result)
+        }
+    }
+
+    private fun uploadAction(): Post? {
+        val title = binding.titleInput.text.toString()
+        val content = binding.contentInput.text.toString()
+
+        if (thumbnailUrl.isNullOrEmpty()) {
+            Toast.makeText(this, "Please upload a thumbnail", Toast.LENGTH_SHORT).show()
+            return null
+        }
+
+        if (title.isEmpty()) {
+            binding.titleInput.error = "Title cannot be empty"
+            return null
+        }
+
+        if (content.isEmpty()) {
+            binding.contentInput.error = "Content cannot be empty"
+            return null
+        }
+
+        val post = Post()
+        post.id = UUID.randomUUID().toString()
+        post.thumbnail = thumbnailUrl
+        post.title = title
+        post.content = content
+        post.author = MiniApplication.instance.currentUser
+        post.timestamp = Timestamp.now()
+
+        return post
+    }
+
+    private fun handleObserver(post: Post) {
+        uploadPostViewModel.uploadPost(post)
+        uploadPostViewModel.uploadResultLiveData.observe(this) {
+            if(it) {
+                PersistentSnackbar.show(this@PostCreatePage, "Tạo bài viết thành công", SnackbarType.success);
+
+                finish()
+            } else {
+                PersistentSnackbar.show(this@PostCreatePage, "Có lỗi xảy ra. Vui lòng thử lại sau.", SnackbarType.error);
+            }
+        }
+    }
+
+    private fun initUploadImage() {
         binding.uploadThumbnail.imageUploadViewModel = imageUploadViewModel
         binding.uploadThumbnail.setOnImageUploadListener { url ->
             thumbnailUrl = url
-        }
-
-        binding.uploadButton.setOnClickListener {
-            val title = binding.titleInput.text.toString()
-            val content = binding.contentInput.text.toString()
-
-            if (thumbnailUrl.isNullOrEmpty()) {
-                Toast.makeText(this, "Please upload a thumbnail", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (title.isEmpty()) {
-                binding.titleInput.error = "Title cannot be empty"
-                return@setOnClickListener
-            }
-
-            if (content.isEmpty()) {
-                binding.contentInput.error = "Content cannot be empty"
-                return@setOnClickListener
-            }
-
-            val post = Post()
-            post.id = UUID.randomUUID().toString()
-            post.thumbnail = thumbnailUrl
-            post.title = title
-            post.content = content
-            post.userId = user?.id
-            post.timestamp = Timestamp.now()
-
-            uploadPostViewModel.uploadPost(post) {
-                if(it) {
-                    PersistentSnackbar.show(this@PostCreatePage, "Tạo bài viết thành công", SnackbarType.success);
-
-                    finish()
-                } else {
-                    PersistentSnackbar.show(this@PostCreatePage, "Có lỗi xảy ra. Vui lòng thử lại sau.", SnackbarType.error);
-                }
-            }
         }
     }
 

@@ -17,6 +17,7 @@
             android:id="@+id/bottomNavBar"
             android:layout_width="match_parent"
             android:layout_height="60dp"
+            android:layout_marginBottom="20dp"
             app:layout_constraintBottom_toBottomOf="parent"/>
         
         <com.google.android.material.floatingactionbutton.FloatingActionButton

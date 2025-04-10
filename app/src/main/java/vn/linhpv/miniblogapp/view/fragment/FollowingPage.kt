@@ -17,9 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import vn.linhpv.miniblogapp.MiniApplication
 import vn.linhpv.miniblogapp.databinding.UserFollowingItemBinding
 import vn.linhpv.miniblogapp.databinding.UserFollowingLayoutBinding
-import vn.linhpv.miniblogapp.model.Post
 import vn.linhpv.miniblogapp.model.User
-import vn.linhpv.miniblogapp.view.PostDetailPage
 import vn.linhpv.miniblogapp.view.UserProfilePage
 import vn.linhpv.miniblogapp.viewmodel.ListFollowingViewModel
 import java.text.SimpleDateFormat
@@ -31,6 +29,7 @@ class FollowingFragment : Fragment() {
     lateinit var binding: UserFollowingLayoutBinding
 
     val followingViewModel: ListFollowingViewModel by viewModels()
+
     var adapter: UserAdapter? = null
 
     override fun onCreateView(
@@ -40,33 +39,38 @@ class FollowingFragment : Fragment() {
     ): View {
         binding = UserFollowingLayoutBinding.inflate(layoutInflater, container, false)
 
-        val recyclerView = binding.recyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this.context)
+        initAdapter()
+        initRecyclerView()
+        initObservers()
+
+        return binding.root
+    }
+
+    private fun initAdapter() {
         adapter = UserAdapter(isFollowing = true) {
             var i = Intent(activity, UserProfilePage::class.java)
             i.putExtra("user", it)
             startActivity(i)
         }
-        recyclerView.adapter = adapter
-
-        followingViewModel.getFollowings(MiniApplication.instance.currentUser?.id ?: "")
-            .observe(viewLifecycleOwner) {
-                adapter?.submitList(it)
-
-                if(it.isNotEmpty()) {
-                    binding.emptyState.visibility = View.GONE
-                } else {
-                    binding.emptyState.visibility = View.VISIBLE
-                }
-            }
-        return binding.root
     }
 
-    fun initAdapter(data: Pair<User, Post>) {
-        val i = Intent(activity, PostDetailPage::class.java)
-        i.putExtra("post", data.second)
-        i.putExtra("user", data.first)
-        startActivity(i)
+    private fun initRecyclerView() {
+        val recyclerView = binding.recyclerView
+        recyclerView.layoutManager = LinearLayoutManager(this.context)
+        recyclerView.adapter = adapter
+    }
+
+    private fun initObservers() {
+        followingViewModel.getFollowings(MiniApplication.instance.currentUser?.id ?: "")
+        followingViewModel.followingsLiveData.observe(viewLifecycleOwner) {
+            adapter?.submitList(it)
+
+            if(it.isNotEmpty()) {
+                binding.emptyState.visibility = View.GONE
+            } else {
+                binding.emptyState.visibility = View.VISIBLE
+            }
+        }
     }
 
 }

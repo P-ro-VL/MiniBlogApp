@@ -14,6 +14,9 @@ import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import vn.linhpv.miniblogapp.R
 import vn.linhpv.miniblogapp.viewmodel.ImageUploadViewModel
 
@@ -81,13 +84,14 @@ class ImageUploadWidget : RelativeLayout {
             showLoadingAnimation(imageUri)
 
             if (imageUri != null) {
-                imageUploadViewModel?.uploadImage(
-                    context!!,
-                    imageUri
-                ) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val result = imageUploadViewModel?.uploadImage(
+                        context!!,
+                        imageUri
+                    )
                     val bitmap =
                         MediaStore.Images.Media.getBitmap(context!!.contentResolver, imageUri)
-                    post { showUploadedImage(bitmap, it.toString()) }
+                    post { showUploadedImage(bitmap, result.toString()) }
                 }
             }
         }

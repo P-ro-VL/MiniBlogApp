@@ -1,8 +1,11 @@
 package vn.linhpv.miniblogapp.viewmodel
 
-import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import vn.linhpv.miniblogapp.model.User
 import vn.linhpv.miniblogapp.repository.UserRepository
 import javax.inject.Inject
@@ -10,8 +13,13 @@ import javax.inject.Inject
 @HiltViewModel
 class SignInViewModel @Inject constructor(private var userRepository: UserRepository) : ViewModel() {
 
-    fun signIn(email: String, password: String): LiveData<User?> {
-        return userRepository.authenticate(email, password)
+    var userLiveData = MutableLiveData<User?>()
+
+    fun signIn(email: String, password: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = userRepository.authenticate(email, password)
+            userLiveData.postValue(result)
+        }
     }
 
 }

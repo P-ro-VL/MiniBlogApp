@@ -1,24 +1,20 @@
 package vn.linhpv.miniblogapp.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import androidx.paging.liveData
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import vn.linhpv.miniblogapp.MiniApplication
 import vn.linhpv.miniblogapp.datasource.PostDataSource
+import vn.linhpv.miniblogapp.datasource.UserDataSource
 import vn.linhpv.miniblogapp.model.Post
 import javax.inject.Inject
 
@@ -28,9 +24,9 @@ enum class QueryPostMode {
     MY_POST,
 }
 
-class PostRepository @Inject constructor(private val dataSource: PostDataSource) {
+class PostRepository @Inject constructor(private val dataSource: PostDataSource, private val userDataSource: UserDataSource) {
 
-    fun getPosts(queryMode: QueryPostMode, pageSize: Int, userId: String = ""): LiveData<PagingData<Post>> {
+    fun getPosts(queryMode: QueryPostMode, pageSize: Int, userId: String = ""): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(
                 pageSize = pageSize,
@@ -38,30 +34,32 @@ class PostRepository @Inject constructor(private val dataSource: PostDataSource)
             ),
             pagingSourceFactory = {
                 when (queryMode) {
-                    QueryPostMode.FOLLOWING -> FollowingPostPagingSource(dataSource, userId)
-                    QueryPostMode.MY_POST -> UserPostPagingSource(dataSource, userId)
-                    else -> AllPostsPagingSource(dataSource, pageSize)
+                    QueryPostMode.FOLLOWING -> FollowingPostPagingSource(userDataSource, userId)
+                    QueryPostMode.MY_POST -> UserPostPagingSource(userDataSource, dataSource, userId)
+                    else -> AllPostsPagingSource(userDataSource, pageSize)
                 }
             }
-        ).liveData
+        ).flow
     }
 
-    fun uploadPost(post: Post, callback: (Boolean) -> Unit) {
-        dataSource.createPost(post, callback)
+    suspend fun uploadPost(post: Post): Boolean {
+        return dataSource.createPost(post)
     }
 
-    fun searchPost(keyword: String): LiveData<List<Post>> {
-        val liveData = MutableLiveData<List<Post>>()
+    suspend fun searchPost(keyword: String): List<Post> {
+        val result = mutableListOf<Post>()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val data = dataSource.searchPost(keyword)
-            liveData.postValue(data)
+        for(post in dataSource.searchPost(keyword)) {
+            val user = userDataSource.getUser(post.author?.id ?: "")
+            post.author = user
+
+            result.add(post)
         }
 
-        return liveData
+        return result
     }
 
-    fun getStarredPosts(): LiveData<PagingData<Post>> {
+    fun getStarredPosts(): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(
                 pageSize = 20,
@@ -70,7 +68,7 @@ class PostRepository @Inject constructor(private val dataSource: PostDataSource)
             pagingSourceFactory = {
                 StarredPostPagingSource(dataSource)
             }
-        ).liveData
+        ).flow
     }
 }
 
@@ -111,7 +109,7 @@ class StarredPostPagingSource(
 }
 
 class FollowingPostPagingSource(
-    private val dataSource: PostDataSource,
+    private val userDataSource: UserDataSource,
     private val userId: String
 ) : PagingSource<QueryDocumentSnapshot, Post>() {
 
@@ -138,9 +136,14 @@ class FollowingPostPagingSource(
             }
             val snapshot = query.get().await()
 
-            var posts = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Post::class.java)
-                }
+            var posts = snapshot.documents.mapNotNull {
+                val doc = it.toObject(Post::class.java)
+
+                val user = userDataSource.getUser(doc?.id ?: "")
+                doc?.author = user
+
+                return@mapNotNull doc
+            }
             val lastVisible = snapshot.documents.lastOrNull() as? QueryDocumentSnapshot
 
             return LoadResult.Page(
@@ -161,12 +164,15 @@ class FollowingPostPagingSource(
 
 
 class UserPostPagingSource(
+    private val userDataSource: UserDataSource,
     private val dataSource: PostDataSource,
     private val userId: String
 ) : PagingSource<QueryDocumentSnapshot, Post>() {
 
     override suspend fun load(params: LoadParams<QueryDocumentSnapshot>): LoadResult<QueryDocumentSnapshot, Post> {
         return try {
+            val user = userDataSource.getUser(userId)
+
             var query = Firebase.firestore.collection(PostDataSource.COLLECTION_NAME)
                 .whereEqualTo("userId", userId)
 
@@ -177,6 +183,9 @@ class UserPostPagingSource(
 
             val snapshot = query.get().await()
             val posts = snapshot.toObjects(Post::class.java)
+            for(post in posts) {
+                post.author = user
+            }
             val lastVisible = snapshot.documents.lastOrNull() as? QueryDocumentSnapshot
 
             LoadResult.Page(
@@ -195,7 +204,7 @@ class UserPostPagingSource(
 }
 
 
-class AllPostsPagingSource(private val dataSource: PostDataSource, private val pageSize: Int, var userId: String = "") : PagingSource<QueryDocumentSnapshot, Post>() {
+class AllPostsPagingSource(private val userDataSource: UserDataSource, private val pageSize: Int, var userId: String = "") : PagingSource<QueryDocumentSnapshot, Post>() {
 
     override suspend fun load(params: LoadParams<QueryDocumentSnapshot>): LoadResult<QueryDocumentSnapshot, Post> {
         return try {
@@ -209,7 +218,13 @@ class AllPostsPagingSource(private val dataSource: PostDataSource, private val p
             }
 
             val snapshot = query.get().await()
-            val posts = snapshot.toObjects(Post::class.java)
+            val posts = mutableListOf<Post>()
+            for(doc in snapshot.documents) {
+                val post = doc.toObject(Post::class.java)
+                val user = userDataSource.getUser((doc.data?.get("userId") ?: "").toString())
+                post?.author = user
+                if(post != null) posts.add(post)
+            }
             val lastVisible = snapshot.documents.lastOrNull() as? QueryDocumentSnapshot
 
             LoadResult.Page(

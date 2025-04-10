@@ -8,26 +8,27 @@ class Post(
     var id: String? = null,
     var title: String? = null,
     var content: String? = null,
-    var userId: String? = null,
     var timestamp: Timestamp? = null,
-    var thumbnail: String? = null
+    var thumbnail: String? = null,
+
+    var author: User? = null
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.readString(),
         parcel.readParcelable(Timestamp::class.java.classLoader),
-        parcel.readString()
+        parcel.readString(),
+        parcel.readParcelable(User::class.java.classLoader)
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(id)
         parcel.writeString(title)
         parcel.writeString(content)
-        parcel.writeString(userId)
         parcel.writeParcelable(timestamp, flags)
         parcel.writeString(thumbnail)
+        parcel.writeParcelable(author, flags)
     }
 
     override fun describeContents(): Int {

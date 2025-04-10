@@ -23,56 +23,74 @@ class SignInPage : AppCompatActivity() {
 
         val loadCachedUserResult = MiniApplication.instance.loadUser()
         if(loadCachedUserResult) {
-            val i = Intent(
-                this@SignInPage,
-                MainLayout::class.java
-            )
-            startActivity(i)
+            navigateToHome()
         }
 
         binding = SignInLayoutBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.signUpText.setOnClickListener {
-            val i = Intent(
-                this@SignInPage,
-                SignUpPage::class.java
-            )
-            startActivity(i)
+            navigateToSignUp()
         }
 
         binding.signInButton.setOnClickListener {
-            val email = binding.usernameInput.text.toString()
-            val password = binding.passwordInput.text.toString()
+            handleRegister()
+        }
+    }
 
-            if(email.isEmpty() || password.isEmpty()) {
+    private fun navigateToHome() {
+        val i = Intent(
+            this@SignInPage,
+            MainLayout::class.java
+        )
+        i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        startActivity(i)
+    }
+
+    private fun navigateToSignUp() {
+        val i = Intent(
+            this@SignInPage,
+            SignUpPage::class.java
+        )
+        startActivity(i)
+    }
+
+    private fun handleRegister() {
+        val email = binding.usernameInput.text.toString()
+        val password = binding.passwordInput.text.toString()
+
+        if(email.isEmpty() || password.isEmpty()) {
+            PersistentSnackbar.show(
+                this,
+                "Vui lòng điền đầy đủ thông tin đăng nhập để tiếp tục",
+                SnackbarType.error)
+            return
+        }
+
+        handleObserver(email, password)
+    }
+
+    private fun handleObserver(email: String, password: String) {
+        signInViewModel.signIn(email, password)
+        signInViewModel.userLiveData.observe(this) {
+            if(it == null) {
                 PersistentSnackbar.show(
                     this,
-                    "Vui lòng điền đầy đủ thông tin đăng nhập để tiếp tục",
+                    "Tài khoản hoặc mật khẩu không đúng",
                     SnackbarType.error)
-                return@setOnClickListener
+                return@observe
             }
 
-            signInViewModel.signIn(email, password).observe(this) {
-                if(it == null) {
-                    PersistentSnackbar.show(
-                        this,
-                        "Tài khoản hoặc mật khẩu không đúng",
-                        SnackbarType.error)
-                    return@observe
-                }
+            MiniApplication.instance.currentUser = it
 
-                MiniApplication.instance.currentUser = it
+            runOnUiThread {
+                val i = Intent(
+                    this@SignInPage,
+                    MainLayout::class.java
+                )
+                startActivity(i)
 
-                runOnUiThread {
-                    val i = Intent(
-                        this@SignInPage,
-                        MainLayout::class.java
-                    )
-                    startActivity(i)
-
-                    MiniApplication.instance.saveUser()
-                }
+                MiniApplication.instance.saveUser()
             }
         }
     }

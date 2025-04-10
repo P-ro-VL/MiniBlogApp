@@ -22,78 +22,88 @@ class SignUpPage : AppCompatActivity() {
 
     lateinit var imageUploadWidget: ImageUploadWidget
 
+    var user: User = User("", "", "", "", "", "USER")
+
     val imageUploadViewModel: ImageUploadViewModel by viewModels()
     val signUpViewModel: SignUpViewModel by viewModels()
-
-    lateinit var user: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        user = User("", "", "", "", "", "USER")
-
         binding = SignUpLayoutBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        imageUploadWidget = binding.uploadAvatar
-        imageUploadWidget.imageUploadViewModel = imageUploadViewModel
-        imageUploadWidget.setOnImageUploadListener(ImageUploadWidget. OnImageUploadListener {
-            user.avatar = it ?: ""
-        })
+        initUI()
 
         binding.signInText.setOnClickListener {
             finish()
         }
 
         binding.signUpButton.setOnClickListener {
-            user.name = binding.fullnameInput.text.toString()
-            user.email = binding.emailInput.text.toString()
-            user.password = binding.passwordInput.text.toString()
+            handleSignUp()
+            handleSignUpObserver()
+        }
+    }
 
-            if(user.name.isEmpty() || user.email.isEmpty() || user.password.isEmpty()) {
-                PersistentSnackbar.show(
-                    this,
-                    "Vui lòng điền đầy đủ thông tin để đăng ký",
-                    SnackbarType.error
-                )
-                return@setOnClickListener
-            }
+    private fun initUI() {
+        imageUploadWidget = binding.uploadAvatar
+        imageUploadWidget.imageUploadViewModel = imageUploadViewModel
+        imageUploadWidget.setOnImageUploadListener(ImageUploadWidget. OnImageUploadListener {
+            user.avatar = it ?: ""
+        })
+    }
 
-            if(!android.util.Patterns.EMAIL_ADDRESS
+    private fun handleSignUp() {
+        user.name = binding.fullnameInput.text.toString()
+        user.email = binding.emailInput.text.toString()
+        user.password = binding.passwordInput.text.toString()
+
+        if(user.name.isEmpty() || user.email.isEmpty() || user.password.isEmpty()) {
+            PersistentSnackbar.show(
+                this,
+                "Vui lòng điền đầy đủ thông tin để đăng ký",
+                SnackbarType.error
+            )
+            return
+        }
+
+        if(!android.util.Patterns.EMAIL_ADDRESS
                 .matcher(user.email)
                 .matches()) {
+            PersistentSnackbar.show(
+                this,
+                "Vui lòng điền một email hợp lệ",
+                SnackbarType.error
+            )
+            return
+        }
+
+        user.id = UUID.randomUUID().toString()
+
+        binding.signUpButton.visibility = View.INVISIBLE
+        binding.loadingIndicator.visibility = View.VISIBLE
+    }
+
+    private fun handleSignUpObserver() {
+        signUpViewModel.signUp(user)
+        signUpViewModel.signUpLiveData.observe(this) {
+            if (it) {
+                PersistentSnackbar.show(
+                    this@SignUpPage,
+                    "Đăng ký tài khoản thành công. Vui lòng đăng nhập.",
+                    SnackbarType.success
+                )
+
+                finish()
+            } else {
+                binding.signUpButton.visibility = View.VISIBLE
+                binding.loadingIndicator.visibility = View.INVISIBLE
+
                 PersistentSnackbar.show(
                     this,
-                    "Vui lòng điền một email hợp lệ",
+                    "Có lỗi xảy ra, vui lòng thử lại sau!",
                     SnackbarType.error
                 )
-                return@setOnClickListener
-            }
-
-            user.id = UUID.randomUUID().toString()
-
-            binding.signUpButton.visibility = View.INVISIBLE
-            binding.loadingIndicator.visibility = View.VISIBLE
-
-            signUpViewModel.signUp(user).observe(this) {
-                if (it) {
-                    PersistentSnackbar.show(
-                        this@SignUpPage,
-                        "Đăng ký tài khoản thành công. Vui lòng đăng nhập.",
-                        SnackbarType.success
-                    )
-
-                    finish()
-                } else {
-                    binding.signUpButton.visibility = View.VISIBLE
-                    binding.loadingIndicator.visibility = View.INVISIBLE
-
-                    PersistentSnackbar.show(
-                        this,
-                        "Có lỗi xảy ra, vui lòng thử lại sau!",
-                        SnackbarType.error
-                    )
-                }
             }
         }
     }

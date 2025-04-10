@@ -34,14 +34,29 @@ class UserProfilePage : AppCompatActivity() {
 
     var isFollowing = false
 
+    var user: User? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = UserDetailLayoutBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val user = intent.getParcelableExtra<User>("user")
+        user = intent.getParcelableExtra<User>("user")
 
+        initUI()
+
+        initAdapter()
+        initRecyclerView()
+
+        initObserver()
+
+        binding.backButton.setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun initUI() {
         binding.nameTextView.text = user?.name
         binding.handleTextView.text = user?.email
 
@@ -54,8 +69,11 @@ class UserProfilePage : AppCompatActivity() {
         Glide.with(applicationContext)
             .load(user?.avatar)
             .into(binding.profileImage)
+    }
 
+    private fun initAdapter() {
         postListAdapter = PostAdapter(
+            this,
             lifecycleOwner = this,
             userViewModel
         ) {
@@ -64,12 +82,16 @@ class UserProfilePage : AppCompatActivity() {
             i.putExtra("user", it.first)
             startActivity(i)
         }
+    }
 
+    private fun initRecyclerView() {
         binding.postRecyclerView.layoutManager = LinearLayoutManager(applicationContext)
         binding.postRecyclerView.adapter = postListAdapter
+    }
 
+    private fun initObserver() {
         listPostViewModel.getPosts(QueryPostMode.MY_POST, 10000, user?.id ?: "")
-            .observe(this) {
+        listPostViewModel.postsLiveData.observe(this) {
                 CoroutineScope(Dispatchers.IO).launch {
                     postListAdapter.submitData(it)
 
@@ -80,13 +102,9 @@ class UserProfilePage : AppCompatActivity() {
                     }
                 }
             }
-
-        binding.backButton.setOnClickListener {
-            finish()
-        }
     }
 
-    fun initFollowingButton(user: User?) {
+    private fun initFollowingButton(user: User?) {
         isFollowing = MiniApplication.instance.currentUser?.following?.contains(user?.id) == true
 
         if (isFollowing) {

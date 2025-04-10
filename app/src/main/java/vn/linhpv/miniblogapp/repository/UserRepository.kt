@@ -1,83 +1,42 @@
 package vn.linhpv.miniblogapp.repository
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import vn.linhpv.miniblogapp.datasource.UserDataSource
 import vn.linhpv.miniblogapp.model.User
 import javax.inject.Inject
 
-
 class UserRepository @Inject constructor(private val dataSource: UserDataSource) {
 
-    fun getUser(id: String): LiveData<User> {
-        val liveData = MutableLiveData<User>()
-        dataSource.getUser(id) {
-            liveData.postValue(it)
-        }
-
-        return liveData
+    suspend fun getUser(id: String): User? {
+        return dataSource.getUser(id)
     }
 
-    fun createUser(user: User): LiveData<Boolean> {
-        val liveData = MutableLiveData<Boolean>()
-        dataSource.createUser(user) {
-            liveData.postValue(it)
-        }
-
-        return liveData
+    suspend fun createUser(user: User): Boolean {
+        return dataSource.createUser(user)
     }
 
-    fun updateUser(user: User): LiveData<Boolean> {
-        val liveData = MutableLiveData<Boolean>()
-        dataSource.updateUser(user) {
-            liveData.postValue(it)
-        }
-
-        return liveData
+    suspend fun updateUser(user: User): Boolean {
+        return dataSource.updateUser(user)
     }
 
-    fun authenticate(email: String, password: String): LiveData<User?> {
-        val liveData = MutableLiveData<User?>()
-        dataSource.authenticate(email, password) {
-            liveData.postValue(it)
-        }
-        return liveData
+    suspend fun authenticate(email: String, password: String): User? {
+        return dataSource.authenticate(email, password)
     }
 
-    fun getFollowings(userId: String): MutableLiveData<List<User>> {
-        val liveData = MutableLiveData<List<User>>()
+    suspend fun getFollowings(userId: String): List<User> {
+        val rootUser = dataSource.getUser(userId)
+        val followings = mutableListOf<User>()
 
-        dataSource.getUser(userId) { rootUser ->
-            val result = mutableListOf<User>()
-
-            Log.d("followers", rootUser?.following.toString())
-
-            for(followingId: String in rootUser?.following ?: emptyList()) {
-                dataSource.getUser(followingId) {
-                    if(it != null) {
-                        result.add(it)
-                        liveData.postValue(result)
-                    }
-                } 
+        rootUser?.following?.forEach { followingId ->
+            val user = dataSource.getUser(followingId)
+            if (user != null) {
+                followings.add(user)
             }
-
-        }
-        return liveData
-    }
-
-    fun searchUser(keyword: String): MutableLiveData<List<User>> {
-        val liveData = MutableLiveData<List<User>>()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val data = dataSource.searchUser(keyword)
-            liveData.postValue(data)
         }
 
-        return liveData
+        return followings
     }
 
+    suspend fun searchUser(keyword: String): List<User> {
+        return dataSource.searchUser(keyword)
+    }
 }

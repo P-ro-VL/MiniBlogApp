@@ -50,29 +50,8 @@ class SearchFragment : Fragment() {
     ): View {
         binding = SearchLayoutBinding.inflate(inflater, container, false)
 
-        userSearchAdapter = UserAdapter(isFollowing = false) {
-            var i = Intent(activity, UserProfilePage::class.java)
-            if(it?.id == MiniApplication.instance.currentUser?.id) {
-                i = Intent(activity, MyProfilePage::class.java)
-            }
-            i.putExtra("user", it)
-            startActivity(i)
-        }
-        postSearchAdapter = PostListAdapter(
-            lifecycleOwner = viewLifecycleOwner,
-            userViewModel = userViewModel
-        ) {
-            val i = Intent(activity, PostDetailPage::class.java)
-            i.putExtra("post", it.second)
-            i.putExtra("user", it.first)
-            startActivity(i)
-        }
-
-        binding.userItems.layoutManager = LinearLayoutManager(context)
-        binding.userItems.adapter = userSearchAdapter
-
-        binding.postItems.layoutManager = LinearLayoutManager(context)
-        binding.postItems.adapter = postSearchAdapter
+        initAdapters()
+        initRecyclerView()
 
         return binding.root
     }
@@ -81,51 +60,45 @@ class SearchFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.searchBar.doOnTextChanged { text, start, before, count ->
-            if (text.isNullOrEmpty()) {
-                binding.recentSection.visibility = View.VISIBLE
-                binding.userSection.visibility = View.GONE
-                binding.postSection.visibility = View.GONE
-                binding.notFound.visibility = View.GONE
-            }
+            checkDefaultState(text?.toString())
         }
         binding.searchBar.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH ||
                 (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
-                val keyword = binding.searchBar.text.toString().trim()
-                if (keyword.isNotEmpty()) {
-                    viewModel.saveKeyword(keyword)
-                    viewModel.searchUser(keyword).observe(viewLifecycleOwner) {
-                        userSearchAdapter.submitList(it)
-
-                        binding.recentSection.visibility = View.GONE
-                        binding.userSection.visibility = if(it.isNotEmpty()) View.VISIBLE else View.GONE
-
-                        if(binding.userSection.isGone && binding.postSection.isGone) {
-                            binding.notFound.visibility = View.VISIBLE
-                        } else {
-                            binding.notFound.visibility = View.GONE
-                        }
-                    }
-                    viewModel.searchPost(keyword).observe(viewLifecycleOwner) {
-                        postSearchAdapter.submitList(it)
-
-                        binding.recentSection.visibility = View.GONE
-                        binding.postSection.visibility = if(it.isNotEmpty()) View.VISIBLE else View.GONE
-
-                        if(binding.userSection.isGone && binding.postSection.isGone) {
-                            binding.notFound.visibility = View.VISIBLE
-                        } else {
-                            binding.notFound.visibility = View.GONE
-                        }
-                    }
-                }
+                handleSearch()
                 true
             } else {
                 false
             }
         }
 
-        viewModel.recentKeywords.observe(viewLifecycleOwner) { keywords ->
+        initKeywordsObserver()
+    }
+
+    private fun initAdapters() {
+        userSearchAdapter = UserAdapter(isFollowing = false) {
+            navigateToDetailUser(it)
+        }
+
+        postSearchAdapter = PostListAdapter(
+            lifecycleOwner = viewLifecycleOwner,
+            userViewModel = userViewModel
+        ) {
+            navigateToDetailPost(it.first, it.second)
+        }
+    }
+
+    private fun initRecyclerView() {
+        binding.userItems.layoutManager = LinearLayoutManager(context)
+        binding.userItems.adapter = userSearchAdapter
+
+        binding.postItems.layoutManager = LinearLayoutManager(context)
+        binding.postItems.adapter = postSearchAdapter
+    }
+
+    private fun initKeywordsObserver() {
+        viewModel.getRecentKeywords()
+        viewModel.recentKeywordLiveData.observe(viewLifecycleOwner) { keywords ->
             if (keywords.isNotEmpty()) {
                 binding.recentSection.visibility = View.VISIBLE
                 binding.recentItems.removeAllViews()
@@ -138,6 +111,66 @@ class SearchFragment : Fragment() {
                         right = 8
                     )
                 }
+            }
+        }
+    }
+
+    private fun navigateToDetailUser(user: User?) {
+        var i = Intent(activity, UserProfilePage::class.java)
+        if(user?.id == MiniApplication.instance.currentUser?.id) {
+            i = Intent(activity, MyProfilePage::class.java)
+        }
+        i.putExtra("user", user)
+        startActivity(i)
+    }
+
+    private fun navigateToDetailPost(user: User, post: Post) {
+        val i = Intent(activity, PostDetailPage::class.java)
+        i.putExtra("post", post)
+        i.putExtra("user", user)
+        startActivity(i)
+    }
+
+    private fun checkDefaultState(text: String?) {
+        if (text.isNullOrEmpty()) {
+            binding.recentSection.visibility = View.VISIBLE
+            binding.userSection.visibility = View.GONE
+            binding.postSection.visibility = View.GONE
+            binding.notFound.visibility = View.GONE
+        }
+    }
+
+    private fun checkEmptyState() {
+        if(binding.userSection.isGone && binding.postSection.isGone) {
+            binding.notFound.visibility = View.VISIBLE
+        } else {
+            binding.notFound.visibility = View.GONE
+        }
+    }
+
+    private fun handleSearch() {
+        val keyword = binding.searchBar.text.toString().trim()
+        if (keyword.isNotEmpty()) {
+            viewModel.saveKeyword(keyword)
+
+            viewModel.searchUser(keyword)
+            viewModel.searchUserLiveData.observe(viewLifecycleOwner) {
+                userSearchAdapter.submitList(it)
+
+                binding.recentSection.visibility = View.GONE
+                binding.userSection.visibility = if(it.isNotEmpty()) View.VISIBLE else View.GONE
+
+                checkEmptyState()
+            }
+
+            viewModel.searchPost(keyword)
+            viewModel.searchPostLiveData.observe(viewLifecycleOwner) {
+                postSearchAdapter.submitList(it)
+
+                binding.recentSection.visibility = View.GONE
+                binding.postSection.visibility = if(it.isNotEmpty()) View.VISIBLE else View.GONE
+
+                checkEmptyState()
             }
         }
     }
@@ -165,29 +198,28 @@ class PostListAdapter(val lifecycleOwner: LifecycleOwner, val userViewModel: Use
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = postList[position]
+        val user = post.author ?: return
+        updateUI(holder, user, post)
+    }
 
-        userViewModel.getUser(post.userId ?: "")
-            .observe(holder.binding.lifecycleOwner ?: lifecycleOwner) {
-                val user = it
+    fun updateUI(holder: PostViewHolder, user: User, post: Post) {
+        Glide.with(holder.binding.root.context)
+            .load(user.avatar)
+            .into(holder.binding.userAvatar)
 
-                Glide.with(holder.binding.root.context)
-                    .load(it.avatar)
-                    .into(holder.binding.userAvatar)
+        holder.binding.userName.text = user.name
 
-                holder.binding.userName.text = it.name
+        holder.binding.title.text = post.title
 
-                holder.binding.title.text = post.title
+        Glide.with(holder.binding.root.context)
+            .load(post.thumbnail)
+            .into(holder.binding.thumbnail)
 
-                Glide.with(holder.binding.root.context)
-                    .load(post.thumbnail)
-                    .into(holder.binding.thumbnail)
+        holder.binding.uploadDate.text = post.timestamp?.format()
 
-                holder.binding.uploadDate.text = post.timestamp?.format()
-
-                holder.itemView.setOnClickListener {
-                    onClick(Pair(user, post))
-                }
-            }
+        holder.itemView.setOnClickListener {
+            onClick(Pair(user, post))
+        }
     }
 
     override fun getItemCount(): Int = postList.size

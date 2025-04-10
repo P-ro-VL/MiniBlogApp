@@ -12,7 +12,7 @@ import java.util.UUID
 
 @Module
 @InstallIn(SingletonComponent::class)
-class UserDataSource() {
+class UserDataSource {
     companion object {
         const val COLLECTION_NAME = "users"
     }
@@ -22,84 +22,72 @@ class UserDataSource() {
         return UserDataSource()
     }
 
-    fun createUser(user: User, callback: (Boolean) -> Unit) {
-        val firestore = Firebase.firestore
-
-        firestore.collection(COLLECTION_NAME)
-            .document(user.id ?: UUID.randomUUID().toString())
-            .set(user)
-            .addOnSuccessListener {
-                callback(true)
-            }
-            .addOnFailureListener {
-                callback(false)
-            }
+    suspend fun createUser(user: User): Boolean {
+        return try {
+            val firestore = Firebase.firestore
+            firestore.collection(COLLECTION_NAME)
+                .document(user.id ?: UUID.randomUUID().toString())
+                .set(user)
+                .await()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    fun getUser(userId: String, callback: (User?) -> Unit) {
-        val firestore = Firebase.firestore
-
-        firestore.collection(COLLECTION_NAME)
-            .whereEqualTo("id", userId)
-            .get()
-            .addOnSuccessListener {
-                val user = it.documents.firstOrNull()?.toObject(User::class.java)
-                callback(user)
-            }
-            .addOnFailureListener {
-                callback(null)
-            }
+    suspend fun getUser(userId: String): User? {
+        return try {
+            val firestore = Firebase.firestore
+            val snapshot = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("id", userId)
+                .get()
+                .await()
+            snapshot.documents.firstOrNull()?.toObject(User::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    fun updateUser(user: User, callback: (Boolean) -> Unit) {
-        val firestore = Firebase.firestore
-
-        firestore.collection(COLLECTION_NAME)
-            .document(user.id ?: UUID.randomUUID().toString())
-            .set(user)
-            .addOnSuccessListener {
-                callback(true)
-            }
-            .addOnFailureListener {
-                callback(false)
-            }
+    suspend fun updateUser(user: User): Boolean {
+        return try {
+            val firestore = Firebase.firestore
+            firestore.collection(COLLECTION_NAME)
+                .document(user.id ?: UUID.randomUUID().toString())
+                .set(user)
+                .await()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    fun authenticate(email: String, password: String, function: (User?) -> Unit) {
-        val firestore = Firebase.firestore
-
-        firestore.collection(COLLECTION_NAME)
-            .whereEqualTo("email", email)
-            .whereEqualTo("password", password)
-            .get()
-            .addOnSuccessListener {
-                val user = it.documents.firstOrNull()?.toObject(User::class.java)
-                function(user)
-            }
-            .addOnFailureListener {
-                function(null)
-            }
+    suspend fun authenticate(email: String, password: String): User? {
+        return try {
+            val firestore = Firebase.firestore
+            val snapshot = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("email", email)
+                .whereEqualTo("password", password)
+                .get()
+                .await()
+            snapshot.documents.firstOrNull()?.toObject(User::class.java)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     suspend fun searchUser(keyword: String): List<User> {
-        val result = mutableListOf<User>()
+        return try {
+            val db = Firebase.firestore
+            val querySnapshot = db.collection(COLLECTION_NAME)
+                .get().await()
 
-        val db = Firebase.firestore
-
-        val query = db.collection("users")
-            .get().await()
-        val users = query.documents.mapNotNull { doc ->
-            doc.toObject(User::class.java)
-        }
-
-        for (user in users) {
-            val cond = user.name.contains(keyword, ignoreCase = true) ?: false
-            if(cond) {
-                result.add(user)
+            querySnapshot.documents.mapNotNull { doc ->
+                doc.toObject(User::class.java)
+            }.filter { user ->
+                user.name?.contains(keyword, ignoreCase = true) == true
             }
+        } catch (e: Exception) {
+            emptyList()
         }
-
-        return result
     }
-
 }

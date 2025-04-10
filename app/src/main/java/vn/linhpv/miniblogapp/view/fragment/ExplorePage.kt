@@ -1,6 +1,7 @@
 package vn.linhpv.miniblogapp.view.fragment
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,6 +26,8 @@ import vn.linhpv.miniblogapp.databinding.PostItemBinding
 import vn.linhpv.miniblogapp.model.Post
 import vn.linhpv.miniblogapp.model.User
 import vn.linhpv.miniblogapp.repository.QueryPostMode
+import vn.linhpv.miniblogapp.util.PersistentSnackbar
+import vn.linhpv.miniblogapp.util.SnackbarType
 import vn.linhpv.miniblogapp.view.PostDetailPage
 import vn.linhpv.miniblogapp.viewmodel.ListPostViewModel
 import vn.linhpv.miniblogapp.viewmodel.UserViewModel
@@ -35,6 +38,7 @@ import java.util.Locale
 class ExploreFragment : Fragment() {
 
     lateinit var binding: ExploreLayoutBinding
+    lateinit var recyclerView: RecyclerView
 
     val listPostViewModel: ListPostViewModel by viewModels();
     val userViewModel: UserViewModel by viewModels();
@@ -49,29 +53,10 @@ class ExploreFragment : Fragment() {
     ): View {
         binding = ExploreLayoutBinding.inflate(layoutInflater, container, false)
 
-        allTabAdapter = PostAdapter(viewLifecycleOwner, userViewModel) {
-            initAdapter(it)
-        }
-        followingTabAdapter = PostAdapter(viewLifecycleOwner, userViewModel) {
-            initAdapter(it)
-        }
+        initAdapters()
+        initRecyclerView()
 
-        val recyclerView = binding.recyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this.context)
-        recyclerView.adapter = allTabAdapter
-
-        listPostViewModel.getPosts(queryMode = QueryPostMode.ALL, pageSize = 10)
-            .observe(viewLifecycleOwner) { pagingData ->
-                lifecycleScope.launch {
-                    allTabAdapter?.submitData(pagingData)
-                }
-            }
-        listPostViewModel.getPosts(queryMode = QueryPostMode.FOLLOWING, pageSize = 10, userId = MiniApplication.instance.currentUser?.id ?: "")
-            .observe(viewLifecycleOwner) { pagingData ->
-                lifecycleScope.launch {
-                    followingTabAdapter?.submitData(pagingData)
-                }
-            }
+        initObservers()
 
         binding.tabsGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
@@ -83,7 +68,38 @@ class ExploreFragment : Fragment() {
         return binding.root
     }
 
-    fun initAdapter(data: Pair<User, Post>) {
+    private fun initAdapters() {
+        allTabAdapter = PostAdapter(requireActivity(), viewLifecycleOwner, userViewModel) {
+            navigateToPostDetail(it)
+        }
+        followingTabAdapter = PostAdapter(requireActivity(), viewLifecycleOwner, userViewModel) {
+            navigateToPostDetail(it)
+        }
+    }
+
+    private fun initRecyclerView() {
+        recyclerView = binding.recyclerView
+        recyclerView.layoutManager = LinearLayoutManager(this.context)
+        recyclerView.adapter = allTabAdapter
+    }
+
+    private fun initObservers() {
+        listPostViewModel.getPosts(queryMode = QueryPostMode.ALL, pageSize = 10)
+        listPostViewModel.getPosts(queryMode = QueryPostMode.FOLLOWING, pageSize = 10, userId = MiniApplication.instance.currentUser?.id ?: "")
+
+        listPostViewModel.postsLiveData.observe(viewLifecycleOwner) {
+            lifecycleScope.launch {
+                allTabAdapter?.submitData(it)
+            }
+        }
+        listPostViewModel.starredPostLiveData.observe(viewLifecycleOwner) {
+            lifecycleScope.launch {
+                followingTabAdapter?.submitData(it)
+            }
+        }
+    }
+
+    private fun navigateToPostDetail(data: Pair<User, Post>) {
         val i = Intent(activity, PostDetailPage::class.java)
         i.putExtra("post", data.second)
         i.putExtra("user", data.first)
@@ -92,7 +108,12 @@ class ExploreFragment : Fragment() {
 
 }
 
-class PostAdapter(private val lifecycleOwner: LifecycleOwner, private val userViewModel: UserViewModel, var onClick: (Pair<User, Post>) -> Unit) : PagingDataAdapter<Post, PostAdapter.PostViewHolder>(POST_COMPARATOR) {
+class PostAdapter(
+    private val activity: Activity,
+    private val lifecycleOwner: LifecycleOwner,
+    private val userViewModel: UserViewModel,
+    var onClick: (Pair<User, Post>) -> Unit
+) : PagingDataAdapter<Post, PostAdapter.PostViewHolder>(POST_COMPARATOR) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val binding = PostItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -101,28 +122,39 @@ class PostAdapter(private val lifecycleOwner: LifecycleOwner, private val userVi
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = getItem(position) ?: return
+        val user = post.author
 
-        userViewModel.getUser(post.userId ?: "")
-            .observe(holder.binding.lifecycleOwner ?: lifecycleOwner) {
-                val user = it
+        if(user == null) {
+            PersistentSnackbar.show(
+                activity,
+                "Có lỗi xảy ra, vui lòng thử lại sau",
+                SnackbarType.error
+            )
+            return
+        }
 
-                Glide.with(holder.binding.root.context)
-                    .load(it.avatar)
-                    .into(holder.binding.userAvatar)
+        println(user.name)
 
-                holder.binding.userName.text = it.name
+        updateUI(holder, user, post)
+    }
 
-                holder.binding.title.text = post.title
+    private fun updateUI(holder: PostViewHolder, user: User, post: Post) {
+        Glide.with(holder.binding.root.context)
+            .load(user.avatar)
+            .into(holder.binding.userAvatar)
 
-                Glide.with(holder.binding.root.context)
-                    .load(post.thumbnail)
-                    .into(holder.binding.thumbnail)
+        holder.binding.userName.text = user.name
 
-                holder.binding.uploadDate.text = formatTimestamp(post.timestamp)
+        holder.binding.title.text = post.title
 
-                holder.itemView.setOnClickListener {
-                    onClick(Pair(user, post))
-                }
+        Glide.with(holder.binding.root.context)
+            .load(post.thumbnail)
+            .into(holder.binding.thumbnail)
+
+        holder.binding.uploadDate.text = formatTimestamp(post.timestamp)
+
+        holder.itemView.setOnClickListener {
+            onClick(Pair(user, post))
         }
     }
 

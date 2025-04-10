@@ -3,20 +3,23 @@ package vn.linhpv.miniblogapp.widget
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.LinearLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import vn.linhpv.miniblogapp.R
 import vn.linhpv.miniblogapp.databinding.WidgetBottomNavigationBarBinding
 
 class BottomNavigationBar : LinearLayout {
 
-    private var context: Context? = null
     lateinit var binding: WidgetBottomNavigationBarBinding
 
     var onSelected: (Int) -> Unit = {}
 
     private var currentCheckedId: Int = R.id.nav_discover
-
     private var isReverting: Boolean = false
+    private var originalBottomMargin: Int = 0
 
     constructor(context: Context) : super(context) {
         init(context)
@@ -35,11 +38,19 @@ class BottomNavigationBar : LinearLayout {
     }
 
     private fun init(context: Context) {
-        this.context = context
         binding = WidgetBottomNavigationBarBinding.inflate(LayoutInflater.from(context), this, true)
 
-        val navGroup = binding.navBarItems
+        ViewCompat.setOnApplyWindowInsetsListener(this) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars())
 
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = originalBottomMargin + insets.bottom
+            }
+
+            WindowInsetsCompat.CONSUMED
+        }
+
+        val navGroup = binding.navBarItems
         navGroup.check(currentCheckedId)
 
         navGroup.setOnCheckedChangeListener { group, checkedId ->
@@ -67,10 +78,13 @@ class BottomNavigationBar : LinearLayout {
         }
     }
 
-    fun setSelectedIndex(index: Int) {
-        if (index < 0 || index > 3) return
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        ViewCompat.requestApplyInsets(this)
+    }
 
-        if (index == 3) {
+    fun setSelectedIndex(index: Int) {
+        if (index < 0 || index >= 3) {
             return
         }
 
@@ -82,10 +96,8 @@ class BottomNavigationBar : LinearLayout {
         }
 
         if (targetId != -1 && targetId != currentCheckedId) {
-            isReverting = true
-            binding.navBarItems.check(targetId)
-            isReverting = false
             currentCheckedId = targetId
+            binding.navBarItems.check(targetId)
         }
     }
 }

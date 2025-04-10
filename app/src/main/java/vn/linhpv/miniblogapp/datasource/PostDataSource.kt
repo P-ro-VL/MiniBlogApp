@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.tasks.await
 import vn.linhpv.miniblogapp.MiniApplication
 import vn.linhpv.miniblogapp.model.Post
+import vn.linhpv.miniblogapp.model.User
 import java.util.UUID
 
 @Module
@@ -26,18 +27,17 @@ class PostDataSource() {
         return PostDataSource()
     }
 
-    fun createPost(post: Post, callback: (Boolean) -> Unit) {
+    suspend fun createPost(post: Post): Boolean {
         val firestore = Firebase.firestore
 
-        firestore.collection(COLLECTION_NAME)
-            .document(post.id ?: UUID.randomUUID().toString())
-            .set(post)
-            .addOnSuccessListener {
-                callback(true)
-            }
-            .addOnFailureListener {
-                callback(false)
-            }
+        return try {
+            firestore.collection(COLLECTION_NAME)
+                .document(post.id ?: UUID.randomUUID().toString())
+                .set(post).await()
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     suspend fun getPostWithPagination(
@@ -114,8 +114,14 @@ class PostDataSource() {
 
         val query = db.collection("posts")
             .get().await()
-        val posts = query.documents.mapNotNull { doc ->
-            doc.toObject(Post::class.java)
+        val documents = query.documents
+        val posts = mutableListOf<Post>()
+
+        for(doc in documents) {
+            val post = doc.toObject(Post::class.java)
+            val user = User(id = (doc.data?.get("userId") ?: "").toString())
+            post?.author = user
+            if(post != null) posts.add(post)
         }
 
         for (post in posts) {

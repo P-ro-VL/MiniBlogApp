@@ -23,15 +23,30 @@ class PostDetailPage : AppCompatActivity() {
 
     lateinit var binding: PostDetailLayoutBinding
 
+    var post: Post? = null
+    var user: User? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = PostDetailLayoutBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
 
-        val post = intent.extras?.getParcelable<Post>("post")
-        val user = intent.extras?.getParcelable<User>("user")
+        post = intent.extras?.getParcelable<Post>("post")
+        user = intent.extras?.getParcelable<User>("user")
 
+        initUI()
+
+        binding.authorSection.setOnClickListener {
+            navigateToDetailUser()
+        }
+
+        binding.backBtn.setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun initUI() {
         binding.title.text = post?.title
         binding.content.text = post?.content
         binding.uploadDate.text = post?.timestamp?.format()
@@ -45,23 +60,20 @@ class PostDetailPage : AppCompatActivity() {
         Glide.with(applicationContext)
             .load(user?.avatar)
             .into(binding.userAvatar)
-        binding.authorSection.setOnClickListener {
-            var intent = Intent(this, UserProfilePage::class.java)
-            if(user?.id == MiniApplication.instance.currentUser?.id) {
-                intent = Intent(this, MyProfilePage::class.java)
-            }
-            intent.putExtra("user", user)
-            startActivity(intent)
-        }
-
-        binding.backBtn.setOnClickListener {
-            finish()
-        }
 
         initFavouriteButton(post)
     }
 
-    fun initFavouriteButton(post: Post?) {
+    private fun navigateToDetailUser() {
+        var intent = Intent(this, UserProfilePage::class.java)
+        if(user?.id == MiniApplication.instance.currentUser?.id) {
+            intent = Intent(this, MyProfilePage::class.java)
+        }
+        intent.putExtra("user", user)
+        startActivity(intent)
+    }
+
+    private fun initFavouriteButton(post: Post?) {
         val dao = MiniApplication.instance.database.favoritePostDao()
 
         lifecycleScope.launch {
