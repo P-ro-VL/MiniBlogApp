@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/uploadButton"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_upload"
+        android:background="@drawable/avatar_circle_background"
+        android:scaleType="center"/>
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/uploadPlaceholder"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        android:alpha="0.3"
+        app:shapeAppearanceOverlay="@style/circularImageStyle"
+        />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="gone"
+        android:indeterminate="true"
+        android:layout_centerInParent="true" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/uploadedImage"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        app:shapeAppearanceOverlay="@style/circularImageStyle"
+        />
+
+</RelativeLayout>

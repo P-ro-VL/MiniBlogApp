@@ -1,26 +1,41 @@
 package vn.linhpv.miniblogapp.viewmodel
 
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import vn.linhpv.miniblogapp.model.Post
-import vn.linhpv.miniblogapp.repository.post.PostRepository
+import vn.linhpv.miniblogapp.repository.PostRepository
+import vn.linhpv.miniblogapp.repository.QueryPostMode
 import javax.inject.Inject
 
 @HiltViewModel
-class ListPostViewModel @Inject constructor(private var postRepository: PostRepository): ViewModel()  {
+class ListPostViewModel @Inject constructor(private var postRepository: PostRepository) : ViewModel() {
 
-    private var posts: LiveData<PagingData<Post>>? = null
+    var postsLiveData = MutableLiveData<PagingData<Post>>()
+    var followingPostsLiveData = MutableLiveData<PagingData<Post>>()
+    var starredPostLiveData = MutableLiveData<PagingData<Post>>()
 
-    fun query(keyword: String, lifecycleOwner: LifecycleOwner): LiveData<PagingData<Post>> {
-        posts?.removeObservers(lifecycleOwner)
+    fun getPosts(queryMode: QueryPostMode, pageSize: Int, userId: String = "") {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = postRepository.getPosts(queryMode, pageSize, userId).cachedIn(this)
+            if(queryMode == QueryPostMode.FOLLOWING)
+                followingPostsLiveData.postValue(result.first())
+            else
+                postsLiveData.postValue(result.first())
+        }
+    }
 
-        posts = postRepository.getPosts(keyword).cachedIn(lifecycleOwner.lifecycle)
-
-        return posts!!
+    fun getStarredPosts() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = postRepository.getStarredPosts().cachedIn(this)
+            starredPostLiveData.postValue(result.first())
+        }
     }
 
 }

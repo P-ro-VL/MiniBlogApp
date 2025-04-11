@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView
+        android:id="@+id/recentText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
+        android:fontFamily="@font/sf_semibold"
+        android:textColor="@color/white"
+        android:textSize="11sp"
+        android:background="@drawable/search_recent_item_background">
+    </TextView>
+</layout>

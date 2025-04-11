@@ -4,6 +4,7 @@ plugins {
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -55,11 +56,16 @@ dependencies {
     implementation(libs.retrofit2.kotlin.coroutines.adapter)
     implementation(libs.androidx.recyclerview)
     implementation(libs.material.v150)
+    implementation(libs.glide.transformations)
+    implementation(libs.flexbox)
 
     implementation(libs.androidx.room.runtime)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.paging)
+    implementation(libs.okhttp)
 
     annotationProcessor(libs.compiler)
     kapt(libs.hilt.android.compiler)
