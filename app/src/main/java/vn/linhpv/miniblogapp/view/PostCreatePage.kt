@@ -38,6 +38,10 @@ class PostCreatePage : AppCompatActivity() {
             if (result != null)
                 handleObserver(result)
         }
+
+        binding.backButton.setOnClickListener {
+            finish()
+        }
     }
 
     private fun uploadAction(): Post? {

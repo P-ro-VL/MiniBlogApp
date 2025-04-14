@@ -1,7 +1,13 @@
 package vn.linhpv.miniblogapp.view
 
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.Manifest.permission.READ_MEDIA_VIDEO
+import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,6 +26,8 @@ class SignInPage : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        requestPermissions()
 
         val loadCachedUserResult = MiniApplication.instance.loadUser()
         if(loadCachedUserResult) {
@@ -92,6 +100,28 @@ class SignInPage : AppCompatActivity() {
 
                 MiniApplication.instance.saveUser()
             }
+        }
+    }
+
+    private fun requestPermissions() {
+        val requestPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+            for(result in results.values) {
+                if(!result) {
+                    PersistentSnackbar.show(
+                        this,
+                        "Vui lòng cấp quyền truy cập để sử dụng đầy đủ tính năng",
+                        SnackbarType.error)
+                    return@registerForActivityResult
+                }
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            requestPermissions.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_MEDIA_VISUAL_USER_SELECTED))
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions.launch(arrayOf(READ_MEDIA_IMAGES, READ_MEDIA_VIDEO))
+        } else {
+            requestPermissions.launch(arrayOf(READ_EXTERNAL_STORAGE))
         }
     }
 
