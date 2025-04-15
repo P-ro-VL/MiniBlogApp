@@ -2,22 +2,14 @@ package vn.linhpv.miniblogapp.repository
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import vn.linhpv.miniblogapp.datasource.ImgurResponse
 import vn.linhpv.miniblogapp.datasource.RetrofitAPI
 import java.io.File
 import java.io.FileOutputStream
@@ -28,7 +20,7 @@ import java.io.IOException
 @InstallIn(SingletonComponent::class)
 class ImageRepository {
 
-    fun uploadImage(context: Context, image: Uri, callback: (String) -> Unit) {
+    suspend fun uploadImage(context: Context, image: Uri): String {
         val file = getFileFromUri(context, image)
         val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
         val imagePart = MultipartBody.Part.createFormData("image", file.name, requestFile)
@@ -36,29 +28,10 @@ class ImageRepository {
         val title = "Simple upload".toRequestBody("text/plain".toMediaTypeOrNull())
         val description = "This is a simple image upload in Imgur".toRequestBody("text/plain".toMediaTypeOrNull())
 
-        CoroutineScope(Dispatchers.IO).launch {
-            RetrofitAPI.instance.imageDataSource
-                ?.uploadImage(imagePart, type, title, description)
-                ?.enqueue(object: Callback<ImgurResponse> {
-                    override fun onResponse(
-                        call: Call<ImgurResponse>,
-                        response: Response<ImgurResponse>
-                    ) {
-                        Log.d("IMAGE UPLOAD", response.code().toString())
-                        if(response.body() != null) {
-                            callback(response.body()?.data?.link ?: "")
-                        } else {
-                            callback("FAILED")
-                        }
-                    }
+        val result = RetrofitAPI.instance.imageDataSource
+                ?.uploadImage(imagePart, type, title, description)?.execute()
 
-                    override fun onFailure(call: Call<ImgurResponse>, t: Throwable) {
-                        callback("")
-                    }
-
-                });
-
-        }
+        return result?.body()?.data?.link ?: ""
     }
 
     @Throws(IOException::class)

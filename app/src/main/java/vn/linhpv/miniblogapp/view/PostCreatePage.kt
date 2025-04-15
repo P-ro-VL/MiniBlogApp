@@ -1,6 +1,5 @@
 package vn.linhpv.miniblogapp.view
 
-import android.app.ComponentCaller
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -68,7 +67,7 @@ class PostCreatePage : AppCompatActivity() {
         post.thumbnail = thumbnailUrl
         post.title = title
         post.content = content
-        post.author = MiniApplication.instance.currentUser
+        post.userId = MiniApplication.instance.currentUser?.id
         post.timestamp = Timestamp.now()
 
         return post
@@ -94,13 +93,8 @@ class PostCreatePage : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?,
-        caller: ComponentCaller
-    ) {
-        super.onActivityResult(requestCode, resultCode, data, caller)
-        binding.uploadThumbnail.handleActivityResult(requestCode, resultCode, data)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        binding.uploadThumbnail.handleActivityResult(requestCode, requestCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }

@@ -76,7 +76,7 @@ class ThumbnailUploadWidget : RelativeLayout {
     }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == AppCompatActivity.RESULT_OK && data != null && data.data != null) {
+        if (requestCode == PICK_IMAGE_REQUEST && data != null && data.data != null) {
             val imageUri = data.data
             showLoadingAnimation(imageUri)
 
@@ -112,4 +112,5 @@ class ThumbnailUploadWidget : RelativeLayout {
     companion object {
         private const val PICK_IMAGE_REQUEST = 1
     }
+
 }

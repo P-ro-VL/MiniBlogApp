@@ -10,6 +10,7 @@ class Post(
     var content: String? = null,
     var timestamp: Timestamp? = null,
     var thumbnail: String? = null,
+    var userId: String? = null,
 
     var author: User? = null
 ) : Parcelable {
@@ -18,6 +19,7 @@ class Post(
         parcel.readString(),
         parcel.readString(),
         parcel.readParcelable(Timestamp::class.java.classLoader),
+        parcel.readString(),
         parcel.readString(),
         parcel.readParcelable(User::class.java.classLoader)
     )
@@ -28,6 +30,7 @@ class Post(
         parcel.writeString(content)
         parcel.writeParcelable(timestamp, flags)
         parcel.writeString(thumbnail)
+        parcel.writeString(userId)
         parcel.writeParcelable(author, flags)
     }
 
